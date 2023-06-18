@@ -1,0 +1,96 @@
+import requests
+from bs4 import BeautifulSoup
+import os
+import nltk
+nltk.download('cmudict')
+from nltk.corpus import cmudict
+from textblob import TextBlob
+
+# Download NLTK resources if not already downloaded
+nltk.download("punkt")
+nltk.download("averaged_perceptron_tagger")
+
+# URL and directory path
+url = "https://insights.blackcoffer.com/ensuring-growth-through-insurance-technology//"
+url_parts = url.split("/")
+url_id = url_parts[-2]
+directory_path = os.path.join(os.path.expanduser("~"), "Documents/Project")
+file_path = os.path.join(directory_path, url_id + ".txt")
+
+# Fetch the web page content
+response = requests.get(url)
+soup = BeautifulSoup(response.content, "html.parser")
+
+# Find the article title and text
+title = soup.find("h1").get_text()
+article_text = ""
+for paragraph in soup.find_all("p"):
+    article_text += paragraph.get_text()
+
+# Save the article to a file
+if not os.path.exists(directory_path):
+    os.makedirs(directory_path)
+
+with open("output.txt", "w", encoding="cp1252", errors="ignore") as file:
+    file.write(title + "\n\n" + article_text)
+    print("Saved article to file:", file_path)
+
+# Calculate metrics
+sentences = nltk.sent_tokenize(article_text)
+words = nltk.word_tokenize(article_text)
+num_sentences = len(sentences)
+num_words = len(words)
+
+# Sentiment analysis
+blob = TextBlob(article_text)
+sentiment = blob.sentiment
+positive_score = sentiment.polarity if sentiment.polarity > 0 else 0
+negative_score = -sentiment.polarity if sentiment.polarity < 0 else 0
+negative_score = -sentiment.polarity if sentiment.polarity < 0 else 0 if sentiment.polarity > 0 else 0
+polarity_score = sentiment.polarity
+subjectivity_score = sentiment.subjectivity
+
+# Average Sentence Length
+total_words = sum(len(nltk.word_tokenize(sentence)) for sentence in sentences)
+average_sentence_length = total_words / num_sentences
+
+# Percentage of Complex Words
+d = cmudict.dict()
+complex_word_count = sum(1 for word in words if len(d.get(word.lower(), [])) > 2)
+percentage_complex_words = (complex_word_count / num_words) * 100
+
+# FOG Index
+fog_index = 0.4 * (average_sentence_length + percentage_complex_words)
+
+# Average Number of Words per Sentence
+average_words_per_sentence = total_words / num_sentences
+
+# Syllables per Word
+syllable_count = sum(len(d.get(word.lower(), [])) for word in words)
+average_syllables_per_word = syllable_count / num_words
+
+# Personal Pronouns
+tagged_words = nltk.pos_tag(words)
+personal_pronouns = [word for word, tag in tagged_words if tag == 'PRP']
+
+# Average Word Length
+total_characters = sum(len(word) for word in words)
+average_word_length = total_characters / num_words
+
+# Complex Word Count
+complex_word_count = sum(1 for word in words if len(d.get(word.lower(), [])) > 2)
+
+# Print the calculated metrics
+print("Positive Score:", positive_score)
+print("Negative Score:", negative_score)
+print("Polarity Score:", polarity_score)
+print("Subjectivity Score:", subjectivity_score)
+print("Average Sentence Length:", average_sentence_length)
+print("Percentage of Complex Words:", percentage_complex_words)
+print("FOG Index:", fog_index)
+print("Average Number of Words per Sentence:", average_words_per_sentence)
+print("Complex Word Count:", complex_word_count)
+print("Word Count:", num_words)
+print("Syllables per Word:", average_syllables_per_word)
+print("Personal Pronouns:", personal_pronouns)
+print("Average Word Length:", average_word_length)
